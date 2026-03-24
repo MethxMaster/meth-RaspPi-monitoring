@@ -32,12 +32,14 @@ Monitors system health on a Raspberry Pi 5 and sends a formatted notification to
   📊  PERFORMANCE
   CPU  █░░░░░░░░░    7.5 %
   RAM  ██░░░░░░░░   18.7 %  (340 / 1820 MB)
+  DSK  ██░░░░░░░░   21.0 %  (5.9 / 28.5 GB)
 
   ⚙️  SYSTEM
   ARM Clock    2,400 MHz
   GPU Clock      682 MHz
   Voltage      0.7200 V
   Uptime       2h 15m 30s
+  Local IP     192.168.1.100
 ╚══════════════════════════════════╝
 
 🟡 Status: NORMAL
@@ -67,7 +69,7 @@ Status also escalates to WARNING/CRITICAL if throttle or under-voltage flags are
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/your-username/meth-RaspPi-monitoring.git
+git clone https://github.com/MethxMaster/meth-RaspPi-monitoring.git
 cd meth-RaspPi-monitoring
 ```
 
@@ -120,7 +122,8 @@ Add these lines:
 
 **View logs:**
 ```bash
-tail -f temp_notify.log
+tail -f temp_notify.log   # hourly report log
+tail -f boot_notify.log   # boot notification log
 ```
 
 ## Configuration
