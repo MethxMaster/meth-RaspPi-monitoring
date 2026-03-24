@@ -11,11 +11,13 @@ Monitors system health on a Raspberry Pi 5 and sends a formatted notification to
 | RP1 chip temperature | `/sys/class/hwmon/hwmon1` |
 | CPU usage % | `/proc/stat` (two-sample) |
 | RAM usage % / MB | `/proc/meminfo` |
+| Disk usage % / GB | `shutil.disk_usage("/")` |
 | ARM clock (MHz) | `vcgencmd measure_clock arm` |
 | GPU clock (MHz) | `vcgencmd measure_clock core` |
 | Core voltage (V) | `vcgencmd measure_volts core` |
 | Throttle / under-voltage flags | `vcgencmd get_throttled` |
 | System uptime | `/proc/uptime` |
+| Local IP address | `socket` |
 
 ## Discord notification preview
 
@@ -65,8 +67,8 @@ Status also escalates to WARNING/CRITICAL if throttle or under-voltage flags are
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/your-username/meth-RaspPi-gamma.git
-cd meth-RaspPi-gamma
+git clone https://github.com/your-username/meth-RaspPi-monitoring.git
+cd meth-RaspPi-monitoring
 ```
 
 **2. Create a Discord webhook**
@@ -90,15 +92,23 @@ echo 'DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN' >
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." python3 temp_notify.py
 ```
 
+## Boot notification
+
+`boot_notify.py` fires once on every reboot and sends a Discord alert with the Pi's IP, CPU temp, disk usage, kernel, and uptime. It waits 15 seconds after boot to ensure the network is up (configurable via `BOOT_DELAY`).
+
 ## Schedule with cron (every hour)
 
 ```bash
 crontab -e
 ```
 
-Add this line:
+Add these lines:
 ```
+# Hourly system report
 0 * * * * DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." /usr/bin/python3 /path/to/temp_notify.py >> /path/to/temp_notify.log 2>&1
+
+# Boot notification
+@reboot DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." /usr/bin/python3 /path/to/boot_notify.py >> /path/to/boot_notify.log 2>&1
 ```
 
 **Other intervals:**
@@ -124,6 +134,7 @@ All settings can be overridden via environment variables:
 | `TEMP_COOL` | `40` | Below this = COOL (green) |
 | `TEMP_WARN` | `70` | Above this = WARNING (orange) |
 | `TEMP_ALERT` | `80` | Above this = CRITICAL (red) |
+| `BOOT_DELAY` | `15` | Seconds to wait for network before boot notification |
 
 Example:
 ```bash

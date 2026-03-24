@@ -5,6 +5,8 @@ Raspberry Pi 5 — Detailed System Monitor → Discord Webhook
 
 import json
 import os
+import shutil
+import socket
 import subprocess
 import sys
 import urllib.request
@@ -78,6 +80,24 @@ def get_throttle() -> dict:
     }
 
 
+def get_disk() -> dict:
+    usage = shutil.disk_usage("/")
+    return {
+        "total_gb": round(usage.total / 1024**3, 1),
+        "used_gb":  round(usage.used  / 1024**3, 1),
+        "pct":      round(usage.used  / usage.total * 100, 1),
+    }
+
+
+def get_local_ip() -> str:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "unknown"
+
+
 def get_uptime() -> str:
     with open("/proc/uptime") as f:
         secs = float(f.read().split()[0])
@@ -149,6 +169,8 @@ def build_embed(data: dict) -> dict:
     gclk   = data["gpu_mhz"]
     thr    = data["throttle"]
     mem    = data["memory"]
+    disk   = data["disk"]
+    ip     = data["local_ip"]
     cpupct = data["cpu_pct"]
     uptime = data["uptime"]
     now    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -183,12 +205,14 @@ def build_embed(data: dict) -> dict:
         f"  📊  PERFORMANCE\n"
         f"  CPU  {mono_bar(cpupct)}  {cpupct:5.1f} %\n"
         f"  RAM  {mono_bar(mem['pct'])}  {mem['pct']:5.1f} %  ({mem['used_mb']} / {mem['total_mb']} MB)\n"
+        f"  DSK  {mono_bar(disk['pct'])}  {disk['pct']:5.1f} %  ({disk['used_gb']} / {disk['total_gb']} GB)\n"
         f"\n"
         f"  ⚙️  SYSTEM\n"
         f"  ARM Clock   {arm:>6,} MHz\n"
         f"  GPU Clock   {gclk:>6,} MHz\n"
         f"  Voltage     {volt:.4f} V\n"
         f"  Uptime      {uptime}\n"
+        f"  Local IP    {ip}\n"
         f"```"
     )
 
@@ -262,6 +286,8 @@ def main() -> None:
         "gpu_mhz":  get_gpu_clock_mhz(),
         "throttle": get_throttle(),
         "memory":   get_memory(),
+        "disk":     get_disk(),
+        "local_ip": get_local_ip(),
         "cpu_pct":  get_cpu_usage(),
         "uptime":   get_uptime(),
     }
